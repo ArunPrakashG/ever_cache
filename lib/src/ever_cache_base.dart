@@ -8,6 +8,7 @@ final class EverCache<T extends Object> {
   EverCache(
     this._fetch, {
     this.events,
+    this.placeholder,
     this.ttl,
     bool earlyCompute = false,
     this.debug = false,
@@ -22,6 +23,7 @@ final class EverCache<T extends Object> {
   }
 
   final Future<T> Function() _fetch;
+  final T Function()? placeholder;
   final EverEvents? events;
   final EverTTL? ttl;
   final bool debug;
@@ -36,7 +38,12 @@ final class EverCache<T extends Object> {
   T get value {
     if (_value == null) {
       backgrounded(compute, debug: debug);
-      throw StateError('Value not yet evaluated');
+
+      if (placeholder != null) {
+        return placeholder!();
+      }
+
+      throw StateError('Value is being evaluated.');
     }
 
     return _value!;

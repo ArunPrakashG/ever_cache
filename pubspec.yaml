@@ -1,0 +1,17 @@
+name: ever_cache
+description: Allows to cache a computed value for a specific duration.
+version: 0.0.1
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.4.3
+
+dependencies:
+  # path: ^1.8.0
+
+dev_dependencies:
+  test: ^1.24.0
+  personal_flutter_lints:
+    git:
+      url: https://github.com/ArunPrakashG/personal_flutter_lints.git
+      ref: main

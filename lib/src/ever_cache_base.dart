@@ -135,7 +135,15 @@ final class EverCache<T extends Object> {
   ///
   /// If the value is already computed and not forced, it will return `true`.
   void computeSync({bool force = false}) {
+    if (_isDisposed) {
+      throw const EverStateException('Value has been disposed.');
+    }
+
     if (_isComputing) {
+      if (placeholder != null) {
+        return;
+      }
+
       throw const EverStateException('Value is being evaluated.');
     }
 

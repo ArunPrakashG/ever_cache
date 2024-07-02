@@ -1,39 +1,60 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# EverCache
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages). 
+A Dart package that provides advanced caching mechanisms with TTL (Time To Live), and events. Designed to enhance performance and resource management in Dart and Flutter applications by efficiently caching data.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages). 
--->
+## ✨ Key Features
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+- **⏳ TTL Support**: Say goodbye to stale data! Automatically purge cache entries after a set duration.
+- **📡 Events**: Monitor the state of the cache based on delegates emitted from the instance.
 
-## Features
+## 🚀 Getting Started
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+Integrate EverCache into your project effortlessly. Just sprinkle this into your `pubspec.yaml`:
 
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
-
-```dart
-const like = 'sample';
+```yaml
+dependencies:
+  ever_cache: ^0.0.1
 ```
 
-## Additional information
+then run `pub get` or `flutter pub get`.
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+## 🌟 Usage
+
+```dart
+import 'package:ever_cache/ever_cache.dart';
+
+final cache = EverCache<String>(
+    () async {
+        // Your computation
+
+        return 'Hello, World!';
+    },
+    // set a placeholder if you wish to return a default value when the computation is in progress.
+    placeholder: () => 'placeholder',
+    // set a TTL (Time To Live) for the cache entry.
+    ttl: EverTTL.seconds(5),
+    // if you want to monitor different events emitted from the cache.
+    events: EverEvents(
+        onComputing: () => print('Conjuring...'),
+        onComputed: () => print('Voila!'),
+        onInvalidated: () => print('Poof! Gone!'),
+        onError: (e, stackTrace) => print('Oops! Computation failed: $e'),
+    ),
+    // if you want the cache to be computed as soon as this constructor is called in the background
+    earlyCompute: true,
+    // if you want to meaningful debug logs in the console
+    debug: true,
+);
+```
+
+### 📚 Additional Methods
+
+- **`compute()`**: Manually compute the cache entry.
+- **`invalidate()`**: Invalidate the cache entry.
+- **`dispose()`**: Dispose of the cache entry.
+
+## Note
+
+EverCache is an open-source project and contributions are welcome! If you encounter any issues or have feature requests, please file them on the project's issue tracker.
+
+For more detailed documentation, please refer to the source code and comments within the lib/ directory.

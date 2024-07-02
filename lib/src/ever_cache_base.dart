@@ -19,7 +19,7 @@ import 'helpers.dart';
 /// - [ttl]: An optional instance of [EverTTL] to set a TTL for the cached value.
 /// - [earlyCompute]: A boolean indicating whether to compute the value immediately upon instantiation.
 /// - [debug]: A boolean indicating whether to log debug information.
-final class EverCache<T extends Object> {
+final class EverCache<T> {
   /// Constructor for creating an instance of [EverCache].
   EverCache(
     this._fetch, {

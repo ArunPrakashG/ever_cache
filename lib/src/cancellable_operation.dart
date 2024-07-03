@@ -7,13 +7,27 @@ class CancellableOperation<T> {
   final Completer<T?> _completer = Completer<T?>();
   bool _isCancelled = false;
 
+  void cancel() {
+    if (_isCancelled) {
+      return;
+    }
+
+    _isCancelled = true;
+    if (!_completer.isCompleted) {
+      _completer.completeError(
+        const EverOperationCancelledException(),
+        StackTrace.current,
+      );
+    }
+  }
+
   Future<T?> execute(
     Future<T> Function() fetch, {
     void Function()? onComputing,
     void Function()? onComputed,
     void Function(Object error, StackTrace stackTrace)? onError,
   }) async {
-    _isCancelled = false; // Reset the flag for each execution
+    _isCancelled = false;
 
     onComputing?.call();
 
@@ -35,20 +49,6 @@ class CancellableOperation<T> {
       }
 
       return _completer.future;
-    }
-  }
-
-  void cancel() {
-    if (_isCancelled) {
-      return;
-    }
-
-    _isCancelled = true;
-    if (!_completer.isCompleted) {
-      _completer.completeError(
-        const EverOperationCancelledException(),
-        StackTrace.current,
-      );
     }
   }
 }

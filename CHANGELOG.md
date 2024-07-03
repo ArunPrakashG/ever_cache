@@ -9,3 +9,8 @@
 ## 0.0.3
 
 - Remove type constraint
+
+## 0.0.4
+
+- Code refactors
+- Implemented locking mechanism for using the value

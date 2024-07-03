@@ -1,19 +1,35 @@
-# EverCache
+<div align="center">
+  <h1>🚀 EverCache</h1>
 
-A Dart package that provides advanced caching mechanisms with TTL (Time To Live), and events. Designed to enhance performance and resource management in Dart and Flutter applications by efficiently caching data.
+  <p align="center">
+    <a href="https://pub.dev/packages/wordpress_client"> 
+      <img src="https://img.shields.io/pub/v/ever_cache?color=blueviolet" alt="Pub Version"/> 
+    </a> 
+    <br>
+    <img src="https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" />
+    <img src="https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white" alt="Flutter" />
+    <br>
+    <p>
+        A simple dart package which extends the functionality of Dart's built-in `late` keyword to provide a more robust and flexible way to handle lazy initialization. It closesly resembles the `Lazy<T>` from C#.
+    </p>
+</p>
+</div>
 
 ## ✨ Key Features
 
-- **⏳ TTL Support**: Say goodbye to stale data! Automatically purge cache entries after a set duration.
-- **📡 Events**: Monitor the state of the cache based on delegates emitted from the instance.
+- **🚀 Lazy Initialization**: Compute the cache entry only when it is accessed for the first time. (or trigger the compute manually!)
+- **⏳ TTL Support**: Automatically purge cache entries after a set duration.
+- **📡 Events**: Monitor the state of the cache based on delegates invoked from the instance.
+- **🔧 Placeholder**: Provide placeholder data to be returned when cache is being computed.
+- **🔍 Access Locking**: Control acess to the computed value by using `lock` functionality.
 
 ## 🚀 Getting Started
 
-Integrate EverCache into your project effortlessly. Just sprinkle this into your `pubspec.yaml`:
+Integrate `ever_cache` into your project effortlessly. Just sprinkle this into your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  ever_cache: ^0.0.1
+  ever_cache: ^0.0.4
 ```
 
 then run `pub get` or `flutter pub get`.
@@ -42,14 +58,14 @@ final cache = EverCache<String>(
     ),
     // if you want the cache to be computed as soon as this constructor is called in the background
     earlyCompute: true,
-    // if you want to meaningful debug logs in the console
-    debug: true,
 );
 ```
 
 ### 📚 Additional Methods
 
-- **`compute()`**: Manually compute the cache entry.
+- **`compute()`**: Manually compute the cache entryin async.
+- **`computeSync()`**: Manually compute the cache entry in sync.
+- **`lock()`**: Lock the cache entry to prevent further access till the provided callback is executed.
 - **`invalidate()`**: Invalidate the cache entry.
 - **`dispose()`**: Dispose of the cache entry.
 

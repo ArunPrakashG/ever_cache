@@ -8,4 +8,4 @@ export 'src/ever_value_base.dart' show IEverValue;
 export 'src/exceptions/ever_operation_cancelled_exception.dart';
 export 'src/exceptions/ever_state_exception.dart';
 export 'src/helpers.dart';
-export 'src/lockable_base.dart' show ILockable, LockableExtension hide lock;
+export 'src/lockable_base.dart';

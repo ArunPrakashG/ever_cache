@@ -1,13 +1,13 @@
+import 'dart:async';
+
 import 'package:ever_cache/ever_cache.dart';
 import 'package:test/test.dart';
-
-Future<void> get delay => Future.delayed(const Duration(seconds: 2));
 
 void main() {
   group(
     'EverCache Tests',
     () {
-      late EverCache<String> cache;
+      EverCache<String> cache;
 
       test(
         'value should throw if being computed and no placeholder provided',
@@ -230,6 +230,7 @@ void main() {
           // Wait for the computation to complete
           await Future<void>.delayed(const Duration(seconds: 3));
           expect(cache.computing, isFalse);
+          cache.dispose();
         },
       );
 
@@ -251,6 +252,7 @@ void main() {
           // Wait for the computation to complete
           await Future<void>.delayed(const Duration(seconds: 3));
           expect(cache.computing, isFalse);
+          cache.dispose();
         },
       );
 
@@ -274,7 +276,41 @@ void main() {
         await cache.compute();
         expect(cache.value, equals('value 2'));
         expect(computationCount, equals(2));
+        cache.dispose();
+      });
+
+      test(
+          'Locking should prevent further access to the value during the execution time.',
+          () async {
+        cache = EverCache(
+          () async => 'value',
+          earlyCompute: true,
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        unawaited(
+          cache.use<String>(
+            (value) async {
+              await delay;
+              return Future.value('locked 1');
+            },
+          ),
+        );
+
+        expect(
+          () async {
+            return cache.use(
+              (value) async {
+                return 'locked 2';
+              },
+            );
+          },
+          throwsA(isA<EverStateException>()),
+        );
       });
     },
   );
 }
+
+Future<void> get delay => Future.delayed(const Duration(seconds: 2));

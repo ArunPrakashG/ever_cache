@@ -33,10 +33,13 @@ final class EverCache<T> extends ILockable<T> {
       _scheduleInvalidation();
     }
   }
+
   /// A function that asynchronously fetches the value to be cached.
   final Future<T> Function() _fetch;
+
   /// An optional function that returns a placeholder value until the actual value is fetched.
   final T Function()? placeholder;
+
   /// An optional function that allows to define custom disposing logic for the object.
   final void Function(T? value)? disposer;
 
@@ -50,7 +53,7 @@ final class EverCache<T> extends ILockable<T> {
 
   Timer? _timer;
 
-  final bool _isComputing = false;
+  bool _isComputing = false;
 
   bool _isDisposed = false;
 
@@ -76,7 +79,7 @@ final class EverCache<T> extends ILockable<T> {
 
   /// Indicates whether a timer for invalidation (based on TTL) is scheduled.
   bool get scheduled => _timer != null;
-  
+
   /// The cached value of type [T].
   ///
   /// Throws an [EverStateException] if the value has been disposed or is being evaluated.
@@ -135,17 +138,15 @@ final class EverCache<T> extends ILockable<T> {
     }
 
     _value = await guard(
-      () async, => _fetch(),
-      onError: (e, s) {
-        _isComputing = false;
-        events?.onError?.call(e, s);
-      },
+      () async => _fetch(),
+      onError: events?.onError?.call,
       onStart: () {
         _isComputing = true;
         events?.onComputing?.call();
-        final value = await _fetch();
+      },
+      onEnd: () {
+        _isComputing = false;
         events?.onComputed?.call();
-        return value;
       },
     );
 
@@ -173,7 +174,7 @@ final class EverCache<T> extends ILockable<T> {
     }
 
     return backgrounded(
-      () async, => _fetch(),
+      () async => _fetch(),
       then: (object) => _value = object,
       onStart: () {
         _isComputing = true;

@@ -1,51 +1,43 @@
 import 'dart:async';
-import 'dart:developer';
 
 /// Runs a function in the background.
 void backgrounded<T>(
   FutureOr<T> Function() callback, {
   FutureOr<void> Function(T object)? then,
-  bool debug = false,
   void Function(Object error, StackTrace stackTrace)? onError,
+  void Function()? onStart,
+  void Function()? onEnd,
 }) {
   Timer.run(() async {
-    await guardAsync<void>(
-      function: () async {
+    await guard<void>(
+      () async {
         final result = await callback();
 
         if (then != null) {
           await then(result);
         }
       },
-      onError: (error, stackTrace) async {
-        if (!debug) {
-          return;
-        }
-
-        log(
-          error.toString(),
-          time: DateTime.now(),
-          name: 'backgrounded()',
-          error: error,
-          stackTrace: stackTrace,
-        );
-
-        if (onError != null) {
-          onError(error, stackTrace);
-        }
-      },
+      onStart: onStart,
+      onEnd: onEnd,
+      onError: onError,
     );
   });
 }
 
 /// Guards an asynchronous function.
-Future<T> guardAsync<T>({
-  required Future<T> Function() function,
-  required Future<T> Function(Object error, StackTrace stackTrace) onError,
+FutureOr<T?> guard<T>(
+  FutureOr<T> Function() function, {
+  void Function(Object error, StackTrace stackTrace)? onError,
+  void Function()? onStart,
+  void Function()? onEnd,
 }) async {
   try {
+    onStart?.call();
     return await function();
   } catch (error, stackTrace) {
-    return onError(error, stackTrace);
+    onError?.call(error, stackTrace);
+    return null;
+  } finally {
+    onEnd?.call();
   }
 }

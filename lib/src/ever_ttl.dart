@@ -22,24 +22,24 @@ final class EverTTL {
   /// Constructs a [EverTTL] instance with a given [Duration].
   const EverTTL(this.value);
 
-  /// Creates a [EverTTL] instance representing a number of seconds.
-  factory EverTTL.seconds(int seconds) => EverTTL(Duration(seconds: seconds));
-
-  /// Creates a [EverTTL] instance representing a number of minutes.
-  factory EverTTL.minutes(int minutes) => EverTTL(Duration(minutes: minutes));
+  /// Creates a [EverTTL] instance representing a number of days.
+  factory EverTTL.days(int days) => EverTTL(Duration(days: days));
 
   /// Creates a [EverTTL] instance representing a number of hours.
   factory EverTTL.hours(int hours) => EverTTL(Duration(hours: hours));
 
-  /// Creates a [EverTTL] instance representing a number of days.
-  factory EverTTL.days(int days) => EverTTL(Duration(days: days));
-
-  /// Creates a [EverTTL] instance representing a number of weeks.
-  factory EverTTL.weeks(int weeks) => EverTTL(Duration(days: weeks * 7));
+  /// Creates a [EverTTL] instance representing a number of minutes.
+  factory EverTTL.minutes(int minutes) => EverTTL(Duration(minutes: minutes));
 
   /// Creates a [EverTTL] instance representing a number of months.
   /// Assumes an average month duration of 30 days.
   factory EverTTL.months(int months) => EverTTL(Duration(days: months * 30));
+
+  /// Creates a [EverTTL] instance representing a number of seconds.
+  factory EverTTL.seconds(int seconds) => EverTTL(Duration(seconds: seconds));
+
+  /// Creates a [EverTTL] instance representing a number of weeks.
+  factory EverTTL.weeks(int weeks) => EverTTL(Duration(days: weeks * 7));
 
   /// Creates a [EverTTL] instance representing a number of years.
   /// Assumes a year duration of 365 days.

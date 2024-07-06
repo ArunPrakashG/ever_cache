@@ -87,12 +87,14 @@ final class EverCache<T> extends ILockable<T> {
   /// If the value is not yet computed, it will be fetched in the background as soon as possible.
   @override
   T get value {
-    if (_isDisposed) {
+    if (disposed) {
       throw const EverStateException('Value has been disposed.');
     }
 
-    if (_value == null) {
-      computeSync();
+    if (!computed) {
+      if (!computing) {
+        computeSync();
+      }
 
       if (placeholder != null) {
         return placeholder!();
@@ -133,7 +135,7 @@ final class EverCache<T> extends ILockable<T> {
       throw const EverStateException('Value is being evaluated.');
     }
 
-    if (_value != null && !force) {
+    if (computed && !force) {
       return true;
     }
 
@@ -169,7 +171,7 @@ final class EverCache<T> extends ILockable<T> {
       throw const EverStateException('Value is being evaluated.');
     }
 
-    if (_value != null && !force) {
+    if (computed && !force) {
       return;
     }
 

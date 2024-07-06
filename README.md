@@ -29,7 +29,7 @@ Integrate `ever_cache` into your project effortlessly. Just sprinkle this into y
 
 ```yaml
 dependencies:
-  ever_cache: ^0.0.4
+  ever_cache: ^0.0.6
 ```
 
 then run `pub get` or `flutter pub get`.

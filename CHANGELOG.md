@@ -18,3 +18,7 @@
 ## 0.0.5
 
 - introduce custom disposer for the value
+
+## 0.0.6
+
+- Fix the issue with value getter

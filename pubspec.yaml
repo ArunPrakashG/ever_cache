@@ -1,6 +1,6 @@
 name: ever_cache
 description: Allows to cache a computed value for a specific duration.
-version: 0.0.3
+version: 0.0.5
 repository: https://github.com/ArunPrakashG/ever_cache
 
 environment:

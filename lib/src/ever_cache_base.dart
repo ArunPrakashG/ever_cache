@@ -26,6 +26,7 @@ final class EverCache<T> {
     this.events,
     this.placeholder,
     this.ttl,
+    this.disposer,
     bool earlyCompute = false,
     this.debug = false,
   }) {
@@ -37,12 +38,13 @@ final class EverCache<T> {
       _scheduleInvalidation();
     }
   }
-
   /// A function that asynchronously fetches the value to be cached.
   final Future<T> Function() _fetch;
-
   /// An optional function that returns a placeholder value until the actual value is fetched.
   final T Function()? placeholder;
+
+  /// An optional function that allows to define custom disposing logic for the object.
+  final void Function(T? value)? disposer;
 
   /// An optional instance of [EverEvents] to handle custom events.
   final EverEvents? events;
@@ -54,12 +56,11 @@ final class EverCache<T> {
   final bool debug;
 
   T? _value;
+
   Timer? _timer;
+
   bool _isComputing = false;
   bool _isDisposed = false;
-
-  /// Indicates whether a timer for invalidation (based on TTL) is scheduled.
-  bool get scheduled => _timer != null;
 
   /// Indicates whether the value has been computed and cached.
   bool get computed => _value != null;
@@ -67,6 +68,23 @@ final class EverCache<T> {
   /// Indicates whether the value is being computed.
   bool get computing => _isComputing;
 
+  /// Indicates whether the value has been disposed.
+  bool get disposed => _isDisposed;
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode {
+    return _value?.hashCode ??
+        computed.hashCode ^
+            disposed.hashCode ^
+            computing.hashCode ^
+            scheduled.hashCode ^
+            _fetch.hashCode;
+  }
+
+  /// Indicates whether a timer for invalidation (based on TTL) is scheduled.
+  bool get scheduled => _timer != null;
+  
   /// The cached value of type [T].
   ///
   /// Throws an [EverStateException] if the value has been disposed or is being evaluated.
@@ -88,6 +106,14 @@ final class EverCache<T> {
     }
 
     return _value!;
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(covariant EverCache<T> other) {
+    if (identical(this, other)) return true;
+
+    return other._value == _value;
   }
 
   /// Returns the cached value of type [T] synchronously.
@@ -115,10 +141,14 @@ final class EverCache<T> {
       return true;
     }
 
-    _isComputing = true;
-
-    _value = await guardAsync(
-      function: () async {
+    _value = await guard(
+      () async => _fetch(),
+      onError: (e, s) {
+        _isComputing = false;
+        events?.onError?.call(e, s);
+      },
+      onStart: () {
+        _isComputing = true;
         events?.onComputing?.call();
         final value = await _fetch();
         events?.onComputed?.call();
@@ -151,8 +181,10 @@ final class EverCache<T> {
       return;
     }
 
-    backgrounded(
-      () async {
+    return backgrounded(
+      () async => _fetch(),
+      then: (object) => _value = object,
+      onStart: () {
         _isComputing = true;
         events?.onComputing?.call();
         _value = await _fetch();
@@ -167,6 +199,53 @@ final class EverCache<T> {
     );
   }
 
+  // Disposes the cache and resets the value.
+  void dispose() {
+    unschedule();
+    disposer?.call(_value);
+    _value = null;
+    _isDisposed = true;
+    events?.onDisposed?.call();
+  }
+
+  // Disposes the cache and resets the value.
+  void dispose() {
+    unschedule();
+    _value = null;
+    _isDisposed = true;
+  }
+
+  /// Invalidates the cached value.
+  void invalidate() {
+    _value = null;
+    unschedule();
+    events?.onInvalidated?.call();
+  }
+
+  /// Invalidates the cached value.
+  void invalidate() {
+    _value = null;
+    unschedule();
+    events?.onInvalidated?.call();
+  }
+
+  @override
+  String toString() {
+    return 'EverCache(_fetch: $_fetch, placeholder: $placeholder, events: $events, ttl: $ttl)';
+  }
+
+  /// Unschedules the timer for invalidation (based on TTL).
+  void unschedule() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  /// Unschedules the timer for invalidation (based on TTL).
+  void unschedule() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
   void _scheduleInvalidation() {
     if (ttl == null) {
       return;
@@ -177,25 +256,5 @@ final class EverCache<T> {
     }
 
     _timer = Timer(ttl!.value, invalidate);
-  }
-
-  /// Unschedules the timer for invalidation (based on TTL).
-  void unschedule() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  /// Invalidates the cached value.
-  void invalidate() {
-    _value = null;
-    unschedule();
-    events?.onInvalidated?.call();
-  }
-
-  // Disposes the cache and resets the value.
-  void dispose() {
-    unschedule();
-    _value = null;
-    _isDisposed = true;
   }
 }

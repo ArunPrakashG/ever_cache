@@ -30,11 +30,13 @@ final class EverEvents {
   /// - `onComputed`: A callback function that is called when computation completes.
   /// - `onInvalidated`: A callback function that is called when the cache is invalidated.
   /// - `onError`: A callback function that is called when an error occurs during computation.
+  /// - `onDisposed`: A callback function that is called when the cache is disposed.
   const EverEvents({
     this.onComputing,
     this.onComputed,
     this.onInvalidated,
     this.onError,
+    this.onDisposed,
   });
 
   /// A callback that is invoked when a computation starts.
@@ -45,6 +47,9 @@ final class EverEvents {
 
   /// A callback that is invoked when the cache is invalidated.
   final void Function()? onInvalidated;
+
+  /// A callback that is invoked when an error occurs during computation.
+  final void Function()? onDisposed;
 
   /// A callback that is invoked when an error occurs during computation.
   /// It provides the error object and stack trace for debugging purposes.

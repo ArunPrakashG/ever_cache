@@ -42,7 +42,6 @@ final class EverCache<T> {
   final Future<T> Function() _fetch;
   /// An optional function that returns a placeholder value until the actual value is fetched.
   final T Function()? placeholder;
-
   /// An optional function that allows to define custom disposing logic for the object.
   final void Function(T? value)? disposer;
 
@@ -60,6 +59,7 @@ final class EverCache<T> {
   Timer? _timer;
 
   bool _isComputing = false;
+
   bool _isDisposed = false;
 
   /// Indicates whether the value has been computed and cached.
@@ -208,20 +208,6 @@ final class EverCache<T> {
     events?.onDisposed?.call();
   }
 
-  // Disposes the cache and resets the value.
-  void dispose() {
-    unschedule();
-    _value = null;
-    _isDisposed = true;
-  }
-
-  /// Invalidates the cached value.
-  void invalidate() {
-    _value = null;
-    unschedule();
-    events?.onInvalidated?.call();
-  }
-
   /// Invalidates the cached value.
   void invalidate() {
     _value = null;
@@ -232,12 +218,6 @@ final class EverCache<T> {
   @override
   String toString() {
     return 'EverCache(_fetch: $_fetch, placeholder: $placeholder, events: $events, ttl: $ttl)';
-  }
-
-  /// Unschedules the timer for invalidation (based on TTL).
-  void unschedule() {
-    _timer?.cancel();
-    _timer = null;
   }
 
   /// Unschedules the timer for invalidation (based on TTL).

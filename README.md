@@ -29,7 +29,7 @@ Integrate `ever_cache` into your project effortlessly. Just sprinkle this into y
 
 ```yaml
 dependencies:
-  ever_cache: ^0.0.6
+  ever_cache: ^0.0.8
 ```
 
 then run `pub get` or `flutter pub get`.
@@ -59,6 +59,10 @@ final cache = EverCache<String>(
     // if you want the cache to be computed as soon as this constructor is called in the background
     earlyCompute: true,
 );
+
+// access the computed value
+// cache.value
+// or to safely access it, cache.state
 ```
 
 ### 📚 Additional Methods

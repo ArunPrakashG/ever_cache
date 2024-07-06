@@ -32,6 +32,10 @@ final class EverCache<T> extends ILockable<T> {
     if (ttl != null) {
       _scheduleInvalidation();
     }
+
+    if (placeholder != null) {
+      _state = EverCachedState<T>.placeholder(placeholder!());
+    }
   }
 
   /// A function that asynchronously fetches the value to be cached.
@@ -41,7 +45,7 @@ final class EverCache<T> extends ILockable<T> {
   final T Function()? placeholder;
 
   /// An optional function that allows to define custom disposing logic for the object.
-  final void Function(T? value)? disposer;
+  final void Function(EverCachedState<T> value)? disposer;
 
   /// An optional instance of [EverEvents] to handle custom events.
   final EverEvents? events;
@@ -49,42 +53,67 @@ final class EverCache<T> extends ILockable<T> {
   /// An optional instance of [EverTTL] to set a TTL for the cached value.
   final EverTTL? ttl;
 
-  T? _value;
-
+  EverCachedState<T> _state = EverCachedState<T>.empty();
   Timer? _timer;
-
   bool _isComputing = false;
-
   bool _isDisposed = false;
 
   /// Indicates whether the value has been computed and cached.
-  bool get computed => _value != null;
+  bool get computed {
+    return !_state.isEmpty && !_state.isPlaceholder;
+  }
 
   /// Indicates whether the value is being computed.
   bool get computing => _isComputing;
 
   /// Indicates whether the value has been disposed.
-  bool get disposed => _isDisposed;
-
-  @override
-  // ignore: avoid_equals_and_hash_code_on_mutable_classes
-  int get hashCode {
-    return _value?.hashCode ??
-        computed.hashCode ^
-            disposed.hashCode ^
-            computing.hashCode ^
-            scheduled.hashCode ^
-            _fetch.hashCode;
-  }
+  bool get disposed => _isDisposed && _state.disposed;
 
   /// Indicates whether a timer for invalidation (based on TTL) is scheduled.
   bool get scheduled => _timer != null;
 
-  /// The cached value of type [T].
+  /// The cached state of type [T].
   ///
-  /// Throws an [EverStateException] if the value has been disposed or is being evaluated.
+  /// Please note the difference between `state` and `value`:
   ///
-  /// If the value is not yet computed, it will be fetched in the background as soon as possible.
+  /// - `state` returns an instance of [EverCachedState] that contains the value and metadata.
+  /// - `value` returns the actual value of type [T].
+  ///
+  /// The `state` property is useful when you need to access the cache state safely.
+  /// For example, you can check if the computation returned a null value or if the value is a placeholder.
+  /// ```dart
+  /// final state = cache.state;
+  ///
+  /// if (state.hasValue) {
+  ///   print(state.value);
+  /// }
+  ///
+  /// if (state.isPlaceholder) {
+  ///   print('Value is a placeholder.');
+  /// }
+  /// ```
+  ///
+  /// Throws an [EverStateException] if the value has been disposed.
+  ///
+  /// If the value is not yet computed, it will be computed in the background as soon as possible.
+  @override
+  EverCachedState<T> get state {
+    if (disposed) {
+      throw const EverStateException('Value has been disposed.');
+    }
+
+    if (!computed && !computing) {
+      computeSync();
+    }
+
+    return _state;
+  }
+
+  /// The underlying cached value of type [T].
+  ///
+  /// Throws an [EverStateException] if the value has been disposed, not computed or is being computed.
+  ///
+  /// It also throws an [EverStateException] if the computed value is null.
   @override
   T get value {
     if (disposed) {
@@ -92,18 +121,30 @@ final class EverCache<T> extends ILockable<T> {
     }
 
     if (!computed) {
-      if (!computing) {
-        computeSync();
+      if (_state.isPlaceholder) {
+        return _state.value!;
       }
 
-      if (placeholder != null) {
-        return placeholder!();
-      }
+      throw const EverStateException('Value is not yet computed.');
+    }
 
+    if (computing) {
       throw const EverStateException('Value is being evaluated.');
     }
 
-    return _value!;
+    if (!_state.hasValue) {
+      throw const EverStateException(
+        'The computation resulted in a null value. Please use `placeholder()` to provide a default value.',
+      );
+    }
+
+    return _state.value!;
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode {
+    return _state.hashCode;
   }
 
   @override
@@ -111,7 +152,7 @@ final class EverCache<T> extends ILockable<T> {
   bool operator ==(covariant EverCache<T> other) {
     if (identical(this, other)) return true;
 
-    return other._value == _value;
+    return other._state == _state;
   }
 
   /// Returns the cached value of type [T] synchronously.
@@ -139,8 +180,13 @@ final class EverCache<T> extends ILockable<T> {
       return true;
     }
 
-    _value = await guard(
-      () async => _fetch(),
+    _state = await guard<EverCachedState<T>>(
+      () async {
+        final result = await _fetch();
+
+        return EverCachedState<T>(result);
+      },
+      EverCachedState<T>.empty,
       onError: events?.onError?.call,
       onStart: () {
         _isComputing = true;
@@ -175,9 +221,14 @@ final class EverCache<T> extends ILockable<T> {
       return;
     }
 
-    return backgrounded(
-      () async => _fetch(),
-      then: (object) => _value = object,
+    backgrounded<EverCachedState<T>>(
+      () async {
+        final result = await _fetch();
+
+        return EverCachedState<T>(result);
+      },
+      EverCachedState<T>.empty,
+      then: (object) async => _state = object,
       onStart: () {
         _isComputing = true;
         events?.onComputing?.call();
@@ -193,22 +244,22 @@ final class EverCache<T> extends ILockable<T> {
   // Disposes the cache and resets the value.
   void dispose() {
     unschedule();
-    disposer?.call(_value);
-    _value = null;
+    disposer?.call(_state);
+    _state = EverCachedState<T>.disposed();
     _isDisposed = true;
     events?.onDisposed?.call();
   }
 
   /// Invalidates the cached value.
   void invalidate() {
-    _value = null;
+    _state = EverCachedState<T>.empty();
     unschedule();
     events?.onInvalidated?.call();
   }
 
   @override
   String toString() {
-    return 'EverCache(_fetch: $_fetch, placeholder: $placeholder, events: $events, ttl: $ttl)';
+    return 'EverCache<$T>(computed: $computed, computing: $computing, disposed: $disposed, scheduled: $scheduled)';
   }
 
   /// Unschedules the timer for invalidation (based on TTL).
@@ -234,7 +285,7 @@ final class EverCache<T> extends ILockable<T> {
   /// If the value is locked, an [EverStateException] is thrown.
   static Future<R?> synced<R, T>(
     ILockable<T> lockable,
-    Future<R> Function(T value) callback, {
+    Future<R> Function(EverCachedState<T> value) callback, {
     void Function(Object error, StackTrace stackTrace)? onError,
   }) async {
     return lockable.use<R>(

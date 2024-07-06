@@ -2,6 +2,7 @@
 library;
 
 export 'src/ever_cache_base.dart';
+export 'src/ever_cached_state.dart';
 export 'src/ever_events.dart';
 export 'src/ever_ttl.dart';
 export 'src/ever_value_base.dart' show IEverValue;

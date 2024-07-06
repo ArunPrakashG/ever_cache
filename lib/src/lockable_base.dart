@@ -21,15 +21,16 @@ abstract base class ILockable<T> extends IEverValue<T> {
   ///
   /// If the value is locked, an [EverStateException] is thrown.
   Future<R?> use<R>(
-    Future<R> Function(T value) callback, {
+    Future<R> Function(EverCachedState<T> value) callback, {
     void Function(Object error, StackTrace stackTrace)? onError,
   }) async {
     if (locked) {
       throw const EverStateException('Value is locked.');
     }
 
-    return await guard<R>(
-      () async => callback(value),
+    return guard<R?>(
+      () async => callback(state),
+      () => null,
       onStart: lock,
       onEnd: unlock,
       onError: onError,

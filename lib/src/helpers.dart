@@ -2,8 +2,9 @@ import 'dart:async';
 
 /// Runs a function in the background.
 void backgrounded<T>(
-  FutureOr<T> Function() callback, {
-  FutureOr<void> Function(T object)? then,
+  Future<T> Function() callback,
+  T Function() orElse, {
+  Future<void> Function(T object)? then,
   void Function(Object error, StackTrace stackTrace)? onError,
   void Function()? onStart,
   void Function()? onEnd,
@@ -17,6 +18,7 @@ void backgrounded<T>(
           await then(result);
         }
       },
+      orElse,
       onStart: onStart,
       onEnd: onEnd,
       onError: onError,
@@ -25,8 +27,9 @@ void backgrounded<T>(
 }
 
 /// Guards an asynchronous function.
-FutureOr<T?> guard<T>(
-  FutureOr<T> Function() function, {
+Future<T> guard<T>(
+  Future<T> Function() function,
+  T Function() orElse, {
   void Function(Object error, StackTrace stackTrace)? onError,
   void Function()? onStart,
   void Function()? onEnd,
@@ -36,7 +39,7 @@ FutureOr<T?> guard<T>(
     return await function();
   } catch (error, stackTrace) {
     onError?.call(error, stackTrace);
-    return null;
+    return orElse();
   } finally {
     onEnd?.call();
   }

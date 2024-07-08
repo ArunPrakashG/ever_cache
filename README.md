@@ -2,7 +2,7 @@
   <h1>🚀 EverCache</h1>
 
   <p align="center">
-    <a href="https://pub.dev/packages/wordpress_client"> 
+    <a href="https://pub.dev/packages/ever_cache"> 
       <img src="https://img.shields.io/pub/v/ever_cache?color=blueviolet" alt="Pub Version"/> 
     </a> 
     <br>

@@ -31,3 +31,7 @@
 
 - Fix the issue with EverCachedValue<T> class
 - Refactors
+
+## 0.0.9
+
+- Refactor state of the cache

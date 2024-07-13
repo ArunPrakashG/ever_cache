@@ -309,6 +309,29 @@ void main() {
           throwsA(isA<EverStateException>()),
         );
       });
+
+      test('Instantiation with Early Compute', () {
+        final cache = EverCache.sync(() => 'initial', earlyCompute: true);
+        expect(cache.value, equals('initial'));
+      });
+
+      test('Instantiation without Early Compute', () {
+        final cache = EverCache.sync(() => 'initial');
+        expect(cache.computed, equals(false));
+      });
+
+      test('Compute Sync without Force', () {
+        final cache = EverCache.sync(() => 'initial', earlyCompute: true);
+        final valueBefore = cache.value;
+        cache.computeSync(); // This should not update the value
+        expect(cache.value, equals(valueBefore));
+      });
+
+      test('Dispose', () {
+        final cache = EverCache.sync(() => 'initial', earlyCompute: true);
+        cache.dispose();
+        expect(() => cache.value, throwsA(isA<EverStateException>()));
+      });
     },
   );
 }

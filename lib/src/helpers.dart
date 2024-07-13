@@ -44,3 +44,22 @@ Future<T> guard<T>(
     onEnd?.call();
   }
 }
+
+/// Guards a synchronous function.
+T guardSync<T>(
+  T Function() function,
+  T Function() orElse, {
+  void Function(Object error, StackTrace stackTrace)? onError,
+  void Function()? onStart,
+  void Function()? onEnd,
+}) {
+  try {
+    onStart?.call();
+    return function();
+  } catch (error, stackTrace) {
+    onError?.call(error, stackTrace);
+    return orElse();
+  } finally {
+    onEnd?.call();
+  }
+}

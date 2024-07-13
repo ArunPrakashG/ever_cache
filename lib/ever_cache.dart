@@ -10,3 +10,4 @@ export 'src/exceptions/ever_operation_cancelled_exception.dart';
 export 'src/exceptions/ever_state_exception.dart';
 export 'src/helpers.dart';
 export 'src/lockable_base.dart';
+export 'src/state_extensions.dart';

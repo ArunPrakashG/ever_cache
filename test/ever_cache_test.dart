@@ -334,6 +334,117 @@ void main() {
       });
     },
   );
+
+  group('New behaviors', () {
+    test('sliding TTL reschedules on access when slideOnAccess=true', () async {
+      final cache = EverCache(
+        () async => 'v1',
+        ttl: EverTTL(
+          const Duration(milliseconds: 200),
+          mode: EverTTLMode.sliding,
+          slideOnAccess: true,
+        ),
+      );
+
+      await cache.compute();
+      final firstExpiry = cache.nextExpiryAt;
+      expect(firstExpiry, isNotNull);
+
+      await Future.delayed(const Duration(milliseconds: 80));
+      // Access value to slide TTL
+      expect(cache.value, 'v1');
+      final secondExpiry = cache.nextExpiryAt;
+      expect(secondExpiry, isNotNull);
+      expect(secondExpiry!.isAfter(firstExpiry!), isTrue);
+
+      cache.dispose();
+    });
+
+    test('sliding TTL does not reschedule when slideOnAccess=false', () async {
+      final cache = EverCache(
+        () async => 'v1',
+        ttl: EverTTL(
+          const Duration(milliseconds: 200),
+          mode: EverTTLMode.sliding,
+          slideOnAccess: false,
+        ),
+      );
+
+      await cache.compute();
+      final firstExpiry = cache.nextExpiryAt;
+      expect(firstExpiry, isNotNull);
+
+      await Future.delayed(const Duration(milliseconds: 80));
+      // Access value should NOT slide TTL
+      expect(cache.value, 'v1');
+      final secondExpiry = cache.nextExpiryAt;
+      expect(secondExpiry, equals(firstExpiry));
+
+      // Wait for expiry to pass
+      await Future.delayed(const Duration(milliseconds: 140));
+      expect(cache.scheduled, isFalse);
+
+      cache.dispose();
+    });
+
+    test('publication-only: keep old value on error/null; replace on success', () async {
+      // Start with a non-nullable phase then simulate refreshes
+      var mode = 'first';
+      final cache = EverCache<String?>(
+        () async {
+          if (mode == 'first') return 'A';
+          if (mode == 'error') throw StateError('boom');
+          if (mode == 'null') return null; // nullable T allows null
+          if (mode == 'second') return 'B';
+          return 'Z';
+        },
+        publishMode: EverPublishMode.publicationOnly,
+      );
+
+      await cache.compute();
+      expect(cache.value, equals('A'));
+
+      // Error refresh should not overwrite existing value
+      mode = 'error';
+      await cache.compute(force: true);
+      expect(cache.value, equals('A'));
+
+      // Null refresh should also not overwrite existing value
+      mode = 'null';
+      await cache.compute(force: true);
+      expect(cache.value, equals('A'));
+
+      // Successful refresh should replace
+      mode = 'second';
+      await cache.compute(force: true);
+      expect(cache.value, equals('B'));
+
+      cache.dispose();
+    });
+
+    test('diagnostics: nextExpiryAt/nextPrefetchAt set and cleared', () async {
+      final cache = EverCache(
+        () async => 'v',
+        ttl: EverTTL(
+          const Duration(milliseconds: 200),
+          prefetchBeforeExpiry: const Duration(milliseconds: 100),
+        ),
+      );
+
+      await cache.compute();
+      expect(cache.nextExpiryAt, isNotNull);
+      expect(cache.nextPrefetchAt, isNotNull);
+      expect(cache.prefetchScheduled, isTrue);
+      expect(cache.nextPrefetchAt!.isBefore(cache.nextExpiryAt!), isTrue);
+
+      cache.unschedule();
+      expect(cache.nextExpiryAt, isNull);
+      expect(cache.nextPrefetchAt, isNull);
+      expect(cache.prefetchScheduled, isFalse);
+
+      cache.dispose();
+    });
+  });
 }
 
 Future<void> get delay => Future.delayed(const Duration(seconds: 2));

@@ -2,6 +2,7 @@
 library;
 
 export 'src/ever_cache_base.dart';
+export 'src/ever_cache_map.dart';
 export 'src/ever_cached_state.dart';
 export 'src/ever_events.dart';
 export 'src/ever_ttl.dart';

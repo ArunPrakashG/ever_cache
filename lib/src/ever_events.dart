@@ -1,3 +1,4 @@
+import 'ever_cached_state.dart';
 /// A class that encapsulates event callbacks for various cache operations.
 ///
 /// This class allows clients of the cache to subscribe to different events
@@ -54,4 +55,14 @@ final class EverEvents {
   /// A callback that is invoked when an error occurs during computation.
   /// It provides the error object and stack trace for debugging purposes.
   final void Function(Object error, StackTrace stackTrace)? onError;
+}
+
+/// A lightweight event object for stream-based observability.
+class EverEvent<T> {
+  EverEvent(this.type, {this.state, this.error, this.stackTrace});
+
+  final String type; // 'computing' | 'computed' | 'invalidated' | 'disposed' | 'error'
+  final EverBaseState<T>? state;
+  final Object? error;
+  final StackTrace? stackTrace;
 }
